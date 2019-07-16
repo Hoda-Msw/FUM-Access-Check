@@ -54,7 +54,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "LiquidCrystal.h"
+#include "stdlib.h"
+#include <stdbool.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -65,6 +67,17 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
+/*RTC vars*/
+int i = 0;
+char str[20];
+char str2[20];
+RTC_TimeTypeDef mytime;
+RTC_DateTypeDef mydate;
+
+/*Keypad*/
+int keypadCounter= 1;
+
+									
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -85,7 +98,17 @@ osThreadId ControlHandle;
 osThreadId ESPHandle;
 osSemaphoreId UIDSemaphoreHandle;
 /* USER CODE BEGIN PV */
-
+#ifdef __GNUC__
+	#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
+#else
+	#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
+#endif
+	
+PUTCHAR_PROTOTYPE
+{
+	HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, 1000); // change &uart1 accordingly
+	return ch;
+}	
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -106,7 +129,50 @@ void WebPanelController(void const * argument);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void RTCInitialization(){
+	mytime.Hours = 0x0 ;
+	mytime.Minutes = 0x0;
+	mytime.Seconds= 0x0;
+	
+	mydate.Year = 0x19;
+	mydate.Month = RTC_MONTH_JULY;
+	mydate.Date = 0x16;
+	mydate.WeekDay = RTC_WEEKDAY_MONDAY;
+	
+	HAL_RTC_SetTime(&hrtc , &mytime,RTC_FORMAT_BCD);
+	HAL_RTC_SetDate(&hrtc , &mydate,RTC_FORMAT_BCD);
+}
 
+void setRTC(){
+		HAL_RTC_GetTime(&hrtc , &mytime,RTC_FORMAT_BCD);
+		HAL_RTC_GetDate(&hrtc , &mydate,RTC_FORMAT_BCD);
+		
+		setCursor(0, 1);
+		if(mydate.WeekDay == 1 ) print("Mon");
+		else if (mydate.WeekDay == 2)	print("TUE");
+		else if (mydate.WeekDay == 3)	print("WED");
+		else if (mydate.WeekDay == 4)	print("THU");
+		else if (mydate.WeekDay == 5)	print("FRI");
+		else if (mydate.WeekDay == 6)	print("SAT");
+		else if (mydate.WeekDay == 7)	print("SUN");
+		
+		setCursor(5, 1);
+		sprintf(str2, "%02d/%02d", mydate.Month , mydate.Date);
+		print(str2);
+		
+		setCursor(11, 1);
+		sprintf(str, "%02d:%02d", mytime.Hours , mytime.Minutes);
+		print(str);
+		
+    osDelay(500);
+}
+
+void manageLCD(){
+	setCursor(0,0);
+	print("FUM Access Check");
+	
+	osDelay(500);
+}
 /* USER CODE END 0 */
 
 /**
@@ -125,7 +191,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+	LiquidCrystal(GPIOE, GPIO_PIN_8, GPIO_PIN_9, GPIO_PIN_10, GPIO_PIN_11, GPIO_PIN_12, GPIO_PIN_13, GPIO_PIN_14);
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -140,7 +206,10 @@ int main(void)
   MX_RTC_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-
+	
+	/*RTC initialization*/
+	
+	
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -371,12 +440,20 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, ROW1_Pin|ROW2_Pin|ROW3_Pin|ROW4_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOD, LED1_Pin|LED2_Pin|LED3_Pin|LED4_Pin 
+                          |ROW1_Pin|ROW2_Pin|ROW3_Pin|ROW4_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : COL3_Pin COL4_Pin COL1_Pin COL2_Pin */
   GPIO_InitStruct.Pin = COL3_Pin|COL4_Pin|COL1_Pin|COL2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : LED1_Pin LED2_Pin LED3_Pin LED4_Pin */
+  GPIO_InitStruct.Pin = LED1_Pin|LED2_Pin|LED3_Pin|LED4_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
   /*Configure GPIO pins : ROW1_Pin ROW2_Pin ROW3_Pin ROW4_Pin */
@@ -408,8 +485,9 @@ void StartDefaultTask(void const * argument)
 
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
-  for(;;)
-  {
+  for(;;){
+		
+		
     osDelay(1);
   }
   /* USER CODE END 5 */ 
@@ -425,10 +503,10 @@ void StartDefaultTask(void const * argument)
 void RTCController(void const * argument)
 {
   /* USER CODE BEGIN RTCController */
+	RTCInitialization();
   /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
+  for(;;){
+		setRTC();
   }
   /* USER CODE END RTCController */
 }
@@ -444,8 +522,8 @@ void keypadController(void const * argument)
 {
   /* USER CODE BEGIN keypadController */
   /* Infinite loop */
-  for(;;)
-  {
+  for(;;){
+		
     osDelay(1);
   }
   /* USER CODE END keypadController */
@@ -462,9 +540,9 @@ void LCDController(void const * argument)
 {
   /* USER CODE BEGIN LCDController */
   /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
+	manageLCD();
+  for(;;){
+		
   }
   /* USER CODE END LCDController */
 }
@@ -480,8 +558,9 @@ void Controller(void const * argument)
 {
   /* USER CODE BEGIN Controller */
   /* Infinite loop */
-  for(;;)
-  {
+  for(;;){
+		
+		
     osDelay(1);
   }
   /* USER CODE END Controller */
@@ -498,8 +577,9 @@ void WebPanelController(void const * argument)
 {
   /* USER CODE BEGIN WebPanelController */
   /* Infinite loop */
-  for(;;)
-  {
+  for(;;){
+		
+		
     osDelay(1);
   }
   /* USER CODE END WebPanelController */

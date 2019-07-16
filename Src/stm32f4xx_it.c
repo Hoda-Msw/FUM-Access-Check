@@ -39,6 +39,9 @@
 #include "cmsis_os.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "LiquidCrystal.h"
+#include "stdlib.h"
+#include <stdbool.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -58,7 +61,13 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-
+const char keypad[4][4]={{'1','2','3','A'},
+									{'4','5','6','B'},
+									{'7','8','9','C'},
+									{'*','0','#','D'}};
+int column;
+int cursore = 0;			
+bool clearScreen = true;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -181,7 +190,127 @@ void DebugMon_Handler(void)
 void EXTI9_5_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI9_5_IRQn 0 */
-
+	
+	for(int row=0;row<4;row++){
+			column= -1;
+			switch(row){
+				case 0:
+					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_0,1);
+					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_1,0);
+					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_2,0);
+					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_3,0);
+					break;
+				case 1:
+					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_0,0);
+					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_1,1);
+					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_2,0);
+					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_3,0);
+					break;
+				case 2:
+					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_0,0);
+					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_1,0);
+					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_2,1);
+					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_3,0);
+					break;
+				case 3:
+					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_0,0);
+					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_1,0);
+					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_2,0);
+					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_3,1);
+					break;
+			}
+			//debaunce
+			if(HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_6)){
+				column=0;
+				while(HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_6));
+			}
+			if(HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_7)){
+				column=1;
+				while(HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_7));
+			}
+			if(HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_8)){
+				column=2;
+				while(HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_8));
+			}
+			if(HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_9)){
+				column=3;
+				while(HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_9));
+			}
+			if(column!=-1){
+				printf("%c",keypad[row][column]);
+				
+				if(clearScreen == true){
+					setCursor(0,0);
+					print("                ");
+					setCursor(0,1);
+					print("                ");
+					clearScreen = false;
+				}
+				
+				setCursor(cursore,0);
+				switch(keypad[row][column]){
+						case '0' :
+							write(keypad[row][column]);
+						  setCursor(cursore++,0);
+							break;
+						case '1' :
+							write(keypad[row][column]);
+						  setCursor(cursore++,0);
+							break;
+						case '2' :
+							write(keypad[row][column]);
+						  setCursor(cursore++,0);
+							break;
+						case '3' :
+							write(keypad[row][column]);
+						  setCursor(cursore++,0);
+							break;
+						case '4' :
+							write(keypad[row][column]);
+						  setCursor(cursore++,0);
+							break;
+						case '5' :
+							write(keypad[row][column]);
+						  setCursor(cursore++,0);
+							break;
+						case '6' :
+							write(keypad[row][column]);
+						  setCursor(cursore++,0);
+							break;
+						case '7' :
+							write(keypad[row][column]);
+						  setCursor(cursore++,0);
+							break;
+						case '8' :
+							write(keypad[row][column]);
+						  setCursor(cursore++,0);
+							break;
+						case '9' :
+							write(keypad[row][column]);
+						  setCursor(cursore++,0);
+							break;
+						case 'A':
+							
+							break;
+						case 'B':
+							
+							break;
+						case 'C':
+							
+							break;
+						case 'D':
+							
+							break;
+						case '*':
+							
+							break;
+						case '#':
+							
+							break;
+			}	
+		}
+	}
+	
   /* USER CODE END EXTI9_5_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_6);
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_7);
