@@ -61,13 +61,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-const char keypad[4][4]={{'1','2','3','A'},
-									{'4','5','6','B'},
-									{'7','8','9','C'},
-									{'*','0','#','D'}};
-int column;
-int cursore = 0;			
-bool clearScreen = true;
+bool keypadFlag = false;
+bool RTCFlag = true;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -81,8 +76,9 @@ bool clearScreen = true;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
+extern UART_HandleTypeDef huart2;
 extern UART_HandleTypeDef huart3;
-extern TIM_HandleTypeDef htim1;
+extern TIM_HandleTypeDef htim6;
 
 /* USER CODE BEGIN EV */
 
@@ -190,126 +186,10 @@ void DebugMon_Handler(void)
 void EXTI9_5_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI9_5_IRQn 0 */
-	
-	for(int row=0;row<4;row++){
-			column= -1;
-			switch(row){
-				case 0:
-					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_0,1);
-					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_1,0);
-					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_2,0);
-					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_3,0);
-					break;
-				case 1:
-					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_0,0);
-					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_1,1);
-					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_2,0);
-					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_3,0);
-					break;
-				case 2:
-					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_0,0);
-					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_1,0);
-					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_2,1);
-					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_3,0);
-					break;
-				case 3:
-					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_0,0);
-					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_1,0);
-					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_2,0);
-					HAL_GPIO_WritePin(GPIOD,GPIO_PIN_3,1);
-					break;
-			}
-			//debaunce
-			if(HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_6)){
-				column=0;
-				while(HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_6));
-			}
-			if(HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_7)){
-				column=1;
-				while(HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_7));
-			}
-			if(HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_8)){
-				column=2;
-				while(HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_8));
-			}
-			if(HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_9)){
-				column=3;
-				while(HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_9));
-			}
-			if(column!=-1){
-				printf("%c",keypad[row][column]);
-				
-				if(clearScreen == true){
-					setCursor(0,0);
-					print("                ");
-					setCursor(0,1);
-					print("                ");
-					clearScreen = false;
-				}
-				
-				setCursor(cursore,0);
-				switch(keypad[row][column]){
-						case '0' :
-							write(keypad[row][column]);
-						  setCursor(cursore++,0);
-							break;
-						case '1' :
-							write(keypad[row][column]);
-						  setCursor(cursore++,0);
-							break;
-						case '2' :
-							write(keypad[row][column]);
-						  setCursor(cursore++,0);
-							break;
-						case '3' :
-							write(keypad[row][column]);
-						  setCursor(cursore++,0);
-							break;
-						case '4' :
-							write(keypad[row][column]);
-						  setCursor(cursore++,0);
-							break;
-						case '5' :
-							write(keypad[row][column]);
-						  setCursor(cursore++,0);
-							break;
-						case '6' :
-							write(keypad[row][column]);
-						  setCursor(cursore++,0);
-							break;
-						case '7' :
-							write(keypad[row][column]);
-						  setCursor(cursore++,0);
-							break;
-						case '8' :
-							write(keypad[row][column]);
-						  setCursor(cursore++,0);
-							break;
-						case '9' :
-							write(keypad[row][column]);
-						  setCursor(cursore++,0);
-							break;
-						case 'A':
-							
-							break;
-						case 'B':
-							
-							break;
-						case 'C':
-							
-							break;
-						case 'D':
-							
-							break;
-						case '*':
-							
-							break;
-						case '#':
-							
-							break;
-			}	
-		}
-	}
+	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, GPIO_PIN_SET);
+	printf("interrupted\r\n");
+	keypadFlag = true;
+	RTCFlag = false;
 	
   /* USER CODE END EXTI9_5_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_6);
@@ -317,22 +197,25 @@ void EXTI9_5_IRQHandler(void)
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_8);
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_9);
   /* USER CODE BEGIN EXTI9_5_IRQn 1 */
-
+	HAL_GPIO_WritePin(GPIOD,GPIO_PIN_0,1);
+	HAL_GPIO_WritePin(GPIOD,GPIO_PIN_1,1);
+	HAL_GPIO_WritePin(GPIOD,GPIO_PIN_2,1);
+	HAL_GPIO_WritePin(GPIOD,GPIO_PIN_3,1);
   /* USER CODE END EXTI9_5_IRQn 1 */
 }
 
 /**
-  * @brief This function handles TIM1 update interrupt and TIM10 global interrupt.
+  * @brief This function handles USART2 global interrupt.
   */
-void TIM1_UP_TIM10_IRQHandler(void)
+void USART2_IRQHandler(void)
 {
-  /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 0 */
+  /* USER CODE BEGIN USART2_IRQn 0 */
 
-  /* USER CODE END TIM1_UP_TIM10_IRQn 0 */
-  HAL_TIM_IRQHandler(&htim1);
-  /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 1 */
+  /* USER CODE END USART2_IRQn 0 */
+  HAL_UART_IRQHandler(&huart2);
+  /* USER CODE BEGIN USART2_IRQn 1 */
 
-  /* USER CODE END TIM1_UP_TIM10_IRQn 1 */
+  /* USER CODE END USART2_IRQn 1 */
 }
 
 /**
@@ -347,6 +230,20 @@ void USART3_IRQHandler(void)
   /* USER CODE BEGIN USART3_IRQn 1 */
 
   /* USER CODE END USART3_IRQn 1 */
+}
+
+/**
+  * @brief This function handles TIM6 global interrupt, DAC1 and DAC2 underrun error interrupts.
+  */
+void TIM6_DAC_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM6_DAC_IRQn 0 */
+
+  /* USER CODE END TIM6_DAC_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim6);
+  /* USER CODE BEGIN TIM6_DAC_IRQn 1 */
+
+  /* USER CODE END TIM6_DAC_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */
