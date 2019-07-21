@@ -88,26 +88,34 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define COL3_Pin GPIO_PIN_8
-#define COL3_GPIO_Port GPIOD
-#define COL3_EXTI_IRQn EXTI9_5_IRQn
-#define COL4_Pin GPIO_PIN_9
-#define COL4_GPIO_Port GPIOD
-#define COL4_EXTI_IRQn EXTI9_5_IRQn
-#define ROW1_Pin GPIO_PIN_0
-#define ROW1_GPIO_Port GPIOD
-#define ROW2_Pin GPIO_PIN_1
-#define ROW2_GPIO_Port GPIOD
-#define ROW3_Pin GPIO_PIN_2
-#define ROW3_GPIO_Port GPIOD
-#define ROW4_Pin GPIO_PIN_3
-#define ROW4_GPIO_Port GPIOD
-#define COL1_Pin GPIO_PIN_6
-#define COL1_GPIO_Port GPIOD
-#define COL1_EXTI_IRQn EXTI9_5_IRQn
-#define COL2_Pin GPIO_PIN_7
+#define COL2_Pin GPIO_PIN_8
 #define COL2_GPIO_Port GPIOD
 #define COL2_EXTI_IRQn EXTI9_5_IRQn
+#define COL3_Pin GPIO_PIN_9
+#define COL3_GPIO_Port GPIOD
+#define COL3_EXTI_IRQn EXTI9_5_IRQn
+#define LED1_Pin GPIO_PIN_12
+#define LED1_GPIO_Port GPIOD
+#define LED2_Pin GPIO_PIN_13
+#define LED2_GPIO_Port GPIOD
+#define LED3_Pin GPIO_PIN_14
+#define LED3_GPIO_Port GPIOD
+#define LED4_Pin GPIO_PIN_15
+#define LED4_GPIO_Port GPIOD
+#define ROW0_Pin GPIO_PIN_0
+#define ROW0_GPIO_Port GPIOD
+#define ROW1_Pin GPIO_PIN_1
+#define ROW1_GPIO_Port GPIOD
+#define ROW2_Pin GPIO_PIN_2
+#define ROW2_GPIO_Port GPIOD
+#define ROW3_Pin GPIO_PIN_3
+#define ROW3_GPIO_Port GPIOD
+#define COL0_Pin GPIO_PIN_6
+#define COL0_GPIO_Port GPIOD
+#define COL0_EXTI_IRQn EXTI9_5_IRQn
+#define COL1_Pin GPIO_PIN_7
+#define COL1_GPIO_Port GPIOD
+#define COL1_EXTI_IRQn EXTI9_5_IRQn
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
