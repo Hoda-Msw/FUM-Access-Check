@@ -1,0 +1,90 @@
+Configuration	FinalPrjKeypad
+STM32CubeMX 	5.0.1
+Date	07/21/2019
+MCU	STM32F407VGTx
+
+
+
+PERIPHERALS	MODES	FUNCTIONS	PINS
+RTC	Activate Clock Source	RTC_VS_RTC_Activate	VP_RTC_VS_RTC_Activate
+RTC	Activate Calendar	RTC_VS_RTC_Calendar	VP_RTC_VS_RTC_Calendar
+SYS	Serial Wire	SYS_JTCK-SWCLK	PA14
+SYS	Serial Wire	SYS_JTMS-SWDIO	PA13
+SYS	SysTick	SYS_VS_Systick	VP_SYS_VS_Systick
+USART3	Asynchronous	USART3_RX	PB11
+USART3	Asynchronous	USART3_TX	PB10
+
+
+
+Pin Nb	PINs	FUNCTIONs	LABELs
+47	PB10	USART3_TX	
+48	PB11	USART3_RX	
+55	PD8	GPIO_EXTI8	COL3
+56	PD9	GPIO_EXTI9	COL4
+59	PD12	GPIO_Output	LED1
+60	PD13	GPIO_Output	LED2
+61	PD14	GPIO_Output	LED3
+62	PD15	GPIO_Output	LED4
+72	PA13	SYS_JTMS-SWDIO	
+76	PA14	SYS_JTCK-SWCLK	
+81	PD0	GPIO_Output	ROW1
+82	PD1	GPIO_Output	ROW2
+83	PD2	GPIO_Output	ROW3
+84	PD3	GPIO_Output	ROW4
+87	PD6	GPIO_EXTI6	COL1
+88	PD7	GPIO_EXTI7	COL2
+PERIPHERALS	MODES	FUNCTIONS	PINS
+RTC	Activate Clock Source	RTC_VS_RTC_Activate	VP_RTC_VS_RTC_Activate
+RTC	Activate Calendar	RTC_VS_RTC_Calendar	VP_RTC_VS_RTC_Calendar
+SYS	Serial Wire	SYS_JTCK-SWCLK	PA14
+SYS	Serial Wire	SYS_JTMS-SWDIO	PA13
+SYS	SysTick	SYS_VS_Systick	VP_SYS_VS_Systick
+USART3	Asynchronous	USART3_RX	PB11
+USART3	Asynchronous	USART3_TX	PB10
+
+
+
+Pin Nb	PINs	FUNCTIONs	LABELs
+47	PB10	USART3_TX	
+48	PB11	USART3_RX	
+55	PD8	GPIO_EXTI8	COL3
+56	PD9	GPIO_EXTI9	COL4
+59	PD12	GPIO_Output	LED1
+60	PD13	GPIO_Output	LED2
+61	PD14	GPIO_Output	LED3
+62	PD15	GPIO_Output	LED4
+72	PA13	SYS_JTMS-SWDIO	
+76	PA14	SYS_JTCK-SWCLK	
+81	PD0	GPIO_Output	ROW1
+82	PD1	GPIO_Output	ROW2
+83	PD2	GPIO_Output	ROW3
+84	PD3	GPIO_Output	ROW4
+87	PD6	GPIO_EXTI6	COL1
+88	PD7	GPIO_EXTI7	COL2
+
+
+
+SOFTWARE PROJECT
+
+Project Settings : 
+Project Name : FinalPrjKeypad
+Project Folder : C:\Users\User\Desktop\MicroLabprj\FinalPrjKeypad
+Toolchain / IDE : MDK-ARM V5
+Firmware Package Name and Version : STM32Cube FW_F4 V1.23.0
+
+
+Code Generation Settings : 
+STM32Cube Firmware Library Package : Copy all used libraries into the project folder
+Generate peripheral initialization as a pair of '.c/.h' files per peripheral : No
+Backup previously generated files when re-generating : No
+Delete previously generated files when not re-generated : Yes
+Set all free pins as analog (to optimize the power consumption) : No
+
+
+Toolchains Settings : 
+Compiler Optimizations : 
+
+
+
+
+
