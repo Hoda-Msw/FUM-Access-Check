@@ -1,0 +1,13 @@
+fumaccesscheck\heap_4.o: ../Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c
+fumaccesscheck\heap_4.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+fumaccesscheck\heap_4.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h
+fumaccesscheck\heap_4.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
+fumaccesscheck\heap_4.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+fumaccesscheck\heap_4.o: ../Inc/FreeRTOSConfig.h
+fumaccesscheck\heap_4.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h
+fumaccesscheck\heap_4.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/portable.h
+fumaccesscheck\heap_4.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h
+fumaccesscheck\heap_4.o: ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F/portmacro.h
+fumaccesscheck\heap_4.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h
+fumaccesscheck\heap_4.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h
+fumaccesscheck\heap_4.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h
