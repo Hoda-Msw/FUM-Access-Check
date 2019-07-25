@@ -57,7 +57,6 @@
 #include "LiquidCrystal.h"
 #include "stdlib.h"
 #include <stdbool.h>
-
 #include "eeprom.h"
 /* USER CODE END Includes */
 
@@ -77,7 +76,7 @@ RTC_TimeTypeDef mytime;
 RTC_DateTypeDef mydate;
 extern bool RTCFlag;
 
-/*Keypad*/
+/*Keypad vars*/
 int keypadCounter= 1;
 const char keypad[4][4]={{'1','2','3','A'},
 									{'4','5','6','B'},
@@ -88,7 +87,23 @@ int cursore = 0;
 int cntr = 0;
 bool clearScreen = true;
 extern bool keypadFlag;
+bool uidFlag = true;
+bool passFlag = false;					
 char StudentNumber[100];
+char password[100];
+									
+/*E2PROM vars*/
+uint16_t VirtAddVarTab[NB_OF_VAR] = {0x5555, 0x6666, 0x7777};
+uint16_t VarDataTab[NB_OF_VAR] = {5, 6, 7};
+uint16_t VarValue,VarDataTmp = 0;
+unsigned char E2PROMstr[1];
+char received[100];
+uint16_t E2PROMCounter = 0;
+uint16_t E2PROMBuffer[100];
+bool E2PROMFlag = false;
+bool ESPFlag = false;
+/*flags*/
+extern bool resetFlag;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -109,6 +124,7 @@ osThreadId LCDHandle;
 osThreadId EEPROMHandle;
 osThreadId ESPHandle;
 osTimerId myTimer01Handle;
+osTimerId myTimer02Handle;
 osSemaphoreId UIDSemaphoreHandle;
 /* USER CODE BEGIN PV */
 #ifdef __GNUC__
@@ -130,6 +146,7 @@ static void MX_GPIO_Init(void);
 static void MX_RTC_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_USART2_UART_Init(void);
+static void MX_USB_OTG_FS_USB_Init(void);
 void StartDefaultTask(void const * argument);
 void RTCController(void const * argument);
 void keypadController(void const * argument);
@@ -137,6 +154,7 @@ void LCDController(void const * argument);
 void E2PROMController(void const * argument);
 void WebPanelController(void const * argument);
 void Callback01(void const * argument);
+void Callback02(void const * argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -145,13 +163,13 @@ void Callback01(void const * argument);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 void RTCInitialization(){
-	mytime.Hours = 0x0 ;
-	mytime.Minutes = 0x0;
-	mytime.Seconds= 0x0;
+	mytime.Hours = 17 ;
+	mytime.Minutes = 37;
+	mytime.Seconds= 5;
 	
-	mydate.Year = 0x19;
+	mydate.Year = 19;
 	mydate.Month = RTC_MONTH_JULY;
-	mydate.Date = 0x16;
+	mydate.Date = 22;
 	mydate.WeekDay = RTC_WEEKDAY_MONDAY;
 	
 	HAL_RTC_SetTime(&hrtc , &mytime,RTC_FORMAT_BCD);
@@ -159,9 +177,7 @@ void RTCInitialization(){
 }
 
 void setRTC(){
-		HAL_RTC_GetTime(&hrtc , &mytime,RTC_FORMAT_BCD);
-		HAL_RTC_GetDate(&hrtc , &mydate,RTC_FORMAT_BCD);
-		
+		RTCInitialization();
 		setCursor(0, 1);
 		if(mydate.WeekDay == 1 ) print("Mon");
 		else if (mydate.WeekDay == 2)	print("TUE");
@@ -182,24 +198,56 @@ void setRTC(){
     osDelay(500);
 }
 
-void manageLCD(){
-	setCursor(0,0);
-	print("FUM Access Check");
-	
-	osDelay(500);
-}
+//void manageLCD(){
+//	setCursor(0,0);
+//	print("FUM Access Check");
+//	
+//	osDelay(500);
+//}
 
 void startPage(){
 	setCursor(0,0);
 	print("FUM Access Check");
-	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_SET);
-	printf("uartConnected..\r\n");
+//	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_SET);
+//	printf("uartConnected..\r\n");
 	if(RTCFlag){
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, 1);
+//		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, 1);
 		RTCFlag = false;
 		setRTC();
 		osTimerStart(myTimer01Handle, 100);
 	}
+}
+
+void eepromGetId(){
+	HAL_FLASH_Unlock();
+	/* EEPROM Init */
+	if( EE_Init() != EE_OK ){
+		Error_Handler();
+	}
+	EE_ReadVariable(VirtAddVarTab[1], &E2PROMCounter);
+	if(E2PROMCounter == 0xFFFF){
+		E2PROMCounter = 0;
+		EE_WriteVariable(VirtAddVarTab[1], E2PROMCounter);
+	}
+//	  for(int i = 0; i < E2PROMCounter; i++){
+//			EE_ReadVariable(VirtAddVarTab[0]+i, (uint16_t *)&E2PROMBuffer[i]);
+//	  }
+//	  HAL_UART_Transmit(&huart2, (uint8_t *)E2PROMBuffer, sizeof(E2PROMBuffer), 100);
+//	  
+	  HAL_FLASH_Lock();
+	if(E2PROMFlag){
+			HAL_FLASH_Unlock();
+	
+			for(int i = 0; i < 10; i++){
+				if(EE_WriteVariable(VirtAddVarTab[0] + E2PROMCounter++, StudentNumber[i]) != HAL_OK){
+					Error_Handler();
+				}
+				EE_WriteVariable(VirtAddVarTab[1], E2PROMCounter);
+			}
+			
+			EE_WriteVariable(VirtAddVarTab[1], E2PROMCounter);
+			HAL_FLASH_Lock();
+		}
 }
 
 void manageKeypad(){
@@ -234,7 +282,7 @@ void manageKeypad(){
 			//debaunce
 			if(HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_6)){
 				column=0;
-				HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, 1);
+//				HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, 1);
 				while(HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_6));
 			}
 			if(HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_7)){
@@ -252,8 +300,8 @@ void manageKeypad(){
 			
 			if(keypadFlag){
 				if(column!=-1){
-					HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, 1);
-					printf("%c", keypad[row][column]);
+//					HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, 1);
+//					printf("%c", keypad[row][column]);
 				
 					if(clearScreen == true){
 						setCursor(0,0);
@@ -262,19 +310,23 @@ void manageKeypad(){
 						print("                ");
 						clearScreen = false;
 					}
-				
+//					clear();
 					setCursor(cursore,0);
 					cntr=0;
 					if(keypad[row][column]=='1'||keypad[row][column]=='2'||keypad[row][column]=='3'||keypad[row][column]=='4'||keypad[row][column]=='5'||
 						keypad[row][column]=='6'||keypad[row][column]=='7'||keypad[row][column]=='8'||keypad[row][column]=='9'||keypad[row][column]=='0'){
+//							if(uidFlag){
 							setCursor(0,0);
 							print("Enter UID :");
 							setCursor(cursore++,1);
 							StudentNumber[cntr++]=keypad[row][column];
 							write(keypad[row][column]);
+//							}
+							
 						
 					}else if(keypad[row][column]=='*'){
 						printf("finished!\r\n");
+						clearScreen = true;
 						cursore = 0;
 						clear();
 						RTCFlag = true;
@@ -282,24 +334,46 @@ void manageKeypad(){
 						break;
 					}else if(keypad[row][column]=='#'){
 						printf("checkUID!\r\n");
+						clearScreen = true;
 						cursore = 0;
 						clear();
 						setCursor(0,0);
+//						uidFlag = false;
 						print("Cheking UID!");
+						HAL_Delay(100);
+						clear();
+						setCursor(0,0);
+						print("unauthorized");
+						HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
+						HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
+						HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
+						HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_15);
+						osTimerStart(myTimer02Handle, 10);
 						break;
 					}else if(keypad[row][column]=='A'||keypad[row][column]=='B'||keypad[row][column]=='C'||keypad[row][column]=='D'){
+						clear();
+						setCursor(0,0);
 						print("Enter Password :");
+						HAL_Delay(100);
+//						if(passFlag){
+//							password[cntr++]=keypad[row][column];
+//							write(keypad[row][column]);
+//						}
+						
 						//password check ...
 						if(keypad[row][column]=='A'){
 							cursore = 0;
 							clear();
 							setCursor(0,0);
+							ESPFlag = true;
 							print("Checking SSID...");
 						}else if(keypad[row][column]=='B'){
 							cursore = 0;
 							clear();
 							setCursor(0,0);
-							print("Enter UID :");
+							print("saving..");
+							E2PROMFlag = true;
+							eepromGetId();
 						}else if(keypad[row][column]=='C'){
 							cursore = 0;
 							clear();
@@ -310,6 +384,8 @@ void manageKeypad(){
 							clear();
 							setCursor(0,0);
 							print("Restart ...");
+							HAL_Delay(50);
+							HAL_NVIC_SystemReset();
 						}
 					}
 				}
@@ -317,8 +393,84 @@ void manageKeypad(){
 		}
 }
 
-void manageEEPROM(){
-	
+//void manageEEPROM(){
+//	/* Unlock the Flash Program Erase controller */
+//	  HAL_FLASH_Unlock();
+//	  
+//	  /* EEPROM Init */
+//	  if( EE_Init() != EE_OK){
+//			Error_Handler();
+//	  }
+//	  
+//	  EE_ReadVariable(VirtAddVarTab[1], &E2PROMCounter);
+//	  
+//	  if(E2PROMCounter == 0xFFFF){
+//			E2PROMCounter = 0;
+//			EE_WriteVariable(VirtAddVarTab[1], E2PROMCounter);
+//	  }
+//	  
+//	  for(int i = 0; i < E2PROMCounter; i++){
+//			EE_ReadVariable(VirtAddVarTab[0]+i, (uint16_t *)&E2PROMBuffer[i]);
+//	  }
+//	  HAL_UART_Transmit(&huart2, (uint8_t *)E2PROMBuffer, sizeof(E2PROMBuffer), 100);
+//	  
+//	  HAL_FLASH_Lock();
+//	  
+//	  HAL_UART_Receive_IT(&huart2, E2PROMstr, 1);
+//		
+//		if(E2PROMFlag){
+//			HAL_FLASH_Unlock();
+//	
+//			E2PROMBuffer[E2PROMCounter]=E2PROMstr[0];
+//	
+//			for(int i = 0; i < 10; i++){
+//				if(EE_WriteVariable(VirtAddVarTab[0] + E2PROMCounter++, StudentNumber[i]) != HAL_OK){
+//					Error_Handler();
+//				}
+//			}
+//			EE_WriteVariable(VirtAddVarTab[1], E2PROMCounter);
+//	
+//			HAL_FLASH_Lock();
+//			HAL_UART_Receive_IT(&huart2,E2PROMstr,1);
+//		}
+//}
+
+
+
+//void resetFactory(){
+//	if(resetFlag){
+//		HAL_NVIC_SystemReset();
+//		keypadCounter= 1;
+//		cursore = 0;			
+//		cntr = 0;
+//		clearScreen = true;
+//		VarValue = 0;
+//		VarDataTmp = 0;
+//		E2PROMCounter = 0;
+//		E2PROMFlag = false;		
+//		keypadFlag = false;
+//		RTCFlag = true;
+//		resetFlag = false;
+//	}	
+//}
+
+void atCommound(){
+	printf("AT\r\n");
+	osDelay(700);
+	printf("AT+CWMODE=1\r\n");
+	osDelay(2700);
+	printf("AT+AT+CIFSR\r\n");
+	osDelay(2700);
+	printf("AT+CWJAP=\"hodhod\",\"12345678\"\r\n");
+	osDelay(2700);
+	printf("AT+CWJAP=?\r\n");
+	osDelay(2700);
+	printf("AT+CIPMUX=1\r\n");
+	osDelay(2700);
+	printf("AT+CIPSERVER=1,80\r\n");
+	osDelay(2700);
+//	printf("AT+CWJAP=\"hodhod\",\"12345678\",4,0\r\n");
+//	osDelay(2700);
 }
 /* USER CODE END 0 */
 
@@ -329,7 +481,7 @@ void manageEEPROM(){
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+	
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -353,6 +505,7 @@ int main(void)
   MX_RTC_Init();
   MX_USART3_UART_Init();
   MX_USART2_UART_Init();
+  MX_USB_OTG_FS_USB_Init();
   /* USER CODE BEGIN 2 */
 	
 	/*RTC initialization*/
@@ -377,6 +530,10 @@ int main(void)
   /* definition and creation of myTimer01 */
   osTimerDef(myTimer01, Callback01);
   myTimer01Handle = osTimerCreate(osTimer(myTimer01), osTimerPeriodic, NULL);
+
+  /* definition and creation of myTimer02 */
+  osTimerDef(myTimer02, Callback02);
+  myTimer02Handle = osTimerCreate(osTimer(myTimer02), osTimerPeriodic, NULL);
 
   /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
@@ -423,8 +580,8 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+  while (1){	
+		
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -531,8 +688,8 @@ static void MX_RTC_Init(void)
     Error_Handler();
   }
   sDate.WeekDay = RTC_WEEKDAY_MONDAY;
-  sDate.Month = RTC_MONTH_JULY;
-  sDate.Date = 0x22;
+  sDate.Month = RTC_MONTH_JANUARY;
+  sDate.Date = 0x1;
   sDate.Year = 0x0;
 
   if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
@@ -612,6 +769,27 @@ static void MX_USART3_UART_Init(void)
 }
 
 /**
+  * @brief USB_OTG_FS Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USB_OTG_FS_USB_Init(void)
+{
+
+  /* USER CODE BEGIN USB_OTG_FS_Init 0 */
+
+  /* USER CODE END USB_OTG_FS_Init 0 */
+
+  /* USER CODE BEGIN USB_OTG_FS_Init 1 */
+
+  /* USER CODE END USB_OTG_FS_Init 1 */
+  /* USER CODE BEGIN USB_OTG_FS_Init 2 */
+
+  /* USER CODE END USB_OTG_FS_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -629,6 +807,12 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOD, LED1_Pin|LED2_Pin|LED3_Pin|LED4_Pin 
                           |ROW0_Pin|ROW1_Pin|ROW2_Pin|ROW3_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin : Button_Pin */
+  GPIO_InitStruct.Pin = Button_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(Button_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pins : COL2_Pin COL3_Pin COL0_Pin COL1_Pin */
   GPIO_InitStruct.Pin = COL2_Pin|COL3_Pin|COL0_Pin|COL1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
@@ -642,6 +826,14 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
+  /*Configure GPIO pins : PA10 PA11 PA12 */
+  GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF10_OTG_FS;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
   /*Configure GPIO pins : ROW0_Pin ROW1_Pin ROW2_Pin ROW3_Pin */
   GPIO_InitStruct.Pin = ROW0_Pin|ROW1_Pin|ROW2_Pin|ROW3_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -650,6 +842,9 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
   HAL_NVIC_SetPriority(EXTI9_5_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
@@ -689,11 +884,11 @@ void StartDefaultTask(void const * argument)
 void RTCController(void const * argument)
 {
   /* USER CODE BEGIN RTCController */
-	RTCInitialization();
+//	RTCInitialization();
   /* Infinite loop */
   for(;;){
 		if(RTCFlag){
-			HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, 1);
+//			HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, 1);
 			RTCFlag = false;
 			setRTC();
 			osTimerStart(myTimer01Handle, 100);
@@ -730,8 +925,9 @@ void keypadController(void const * argument)
 void LCDController(void const * argument)
 {
   /* USER CODE BEGIN LCDController */
+	
   /* Infinite loop */
-	manageLCD();
+	startPage();
   for(;;){
 		
   }
@@ -748,6 +944,9 @@ void LCDController(void const * argument)
 void E2PROMController(void const * argument)
 {
   /* USER CODE BEGIN E2PROMController */
+//	manageEEPROM();
+	eepromGetId();
+	E2PROMFlag = false;
   /* Infinite loop */
   for(;;)
   {
@@ -765,6 +964,10 @@ void E2PROMController(void const * argument)
 /* USER CODE END Header_WebPanelController */
 void WebPanelController(void const * argument)
 {
+	if(ESPFlag){
+		atCommound();
+		ESPFlag = false;
+	}
   /* USER CODE BEGIN WebPanelController */
   /* Infinite loop */
   for(;;){
@@ -783,6 +986,19 @@ void Callback01(void const * argument)
 //	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, 1);
   osTimerStop(myTimer01Handle);
   /* USER CODE END Callback01 */
+}
+
+/* Callback02 function */
+void Callback02(void const * argument)
+{
+  /* USER CODE BEGIN Callback02 */
+	printf("hiii");
+  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
+	HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
+	HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
+	HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_15);
+	osTimerStop(myTimer02Handle);
+  /* USER CODE END Callback02 */
 }
 
 /**

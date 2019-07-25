@@ -42,6 +42,7 @@
 #include "LiquidCrystal.h"
 #include "stdlib.h"
 #include <stdbool.h>
+#include "eeprom.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -63,6 +64,7 @@
 /* USER CODE BEGIN PV */
 bool keypadFlag = false;
 bool RTCFlag = true;
+bool resetFlag = false;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -81,7 +83,12 @@ extern UART_HandleTypeDef huart3;
 extern TIM_HandleTypeDef htim6;
 
 /* USER CODE BEGIN EV */
-
+//extern uint16_t VirtAddVarTab[NB_OF_VAR];
+//extern unsigned char E2PROMstr[];
+//extern uint16_t E2PROMCounter;
+//extern uint16_t E2PROMBuffer[];
+//extern bool E2PROMFlag;
+//extern char StudentNumber[];
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -181,13 +188,32 @@ void DebugMon_Handler(void)
 /******************************************************************************/
 
 /**
+  * @brief This function handles EXTI line0 interrupt.
+  */
+void EXTI0_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI0_IRQn 0 */
+
+  /* USER CODE END EXTI0_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
+  /* USER CODE BEGIN EXTI0_IRQn 1 */
+	resetFlag = true;
+	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_SET);
+	HAL_Delay(50);
+	HAL_NVIC_SystemReset();
+		
+	
+  /* USER CODE END EXTI0_IRQn 1 */
+}
+
+/**
   * @brief This function handles EXTI line[9:5] interrupts.
   */
 void EXTI9_5_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI9_5_IRQn 0 */
-	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, GPIO_PIN_SET);
-	printf("interrupted\r\n");
+//	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, GPIO_PIN_SET);
+//	printf("interrupted\r\n");
 	keypadFlag = true;
 	RTCFlag = false;
 	
@@ -228,7 +254,17 @@ void USART3_IRQHandler(void)
   /* USER CODE END USART3_IRQn 0 */
   HAL_UART_IRQHandler(&huart3);
   /* USER CODE BEGIN USART3_IRQn 1 */
-
+//	HAL_FLASH_Unlock();
+//	
+//	E2PROMBuffer[E2PROMCounter]=E2PROMstr[0];
+//	
+//	if(EE_WriteVariable(VirtAddVarTab[0] + E2PROMCounter++, E2PROMstr[0]) != HAL_OK){
+//		Error_Handler();
+//	}
+//	EE_WriteVariable(VirtAddVarTab[1], E2PROMCounter);
+//	
+//	HAL_FLASH_Lock();
+//	HAL_UART_Receive_IT(&huart2,E2PROMstr,1);
   /* USER CODE END USART3_IRQn 1 */
 }
 
